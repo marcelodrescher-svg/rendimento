@@ -152,12 +152,12 @@ button:disabled{opacity:.55;cursor:default}
 .chart .cap{margin:2px 0 12px;font-size:.84rem;color:#46554a}
 .hb{display:grid;grid-template-columns:1fr auto;grid-template-areas:"name val" "bar bar";align-items:end;gap:5px 10px;padding:8px 0}
 .hb-name{grid-area:name;font-size:.98rem;font-weight:600;color:#14201a;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hb-track{grid-area:bar;height:24px;display:flex;gap:2px;min-width:0;background:#e2e9df;border-radius:0 6px 6px 0}
+.hb-track{grid-area:bar;height:24px;display:flex;gap:2px;min-width:0;background:#e5e7eb;border-radius:0 6px 6px 0}
 .hb-track span{display:block;height:100%;min-width:0}
 .hb-track span:last-child{border-radius:0 6px 6px 0}
-.hb-track.one span{background:#1f8a44}
+.hb-track.one span{background:#e8590c}
 .hb-val{grid-area:val;font-size:1.02rem;font-weight:700;color:#14201a;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
-.hb-val em{font-style:normal;font-size:.72rem;font-weight:700;color:#ffffff;background:#1f8a44;border-radius:5px;padding:2px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
+.hb-val em{font-style:normal;font-size:.72rem;font-weight:700;color:#ffffff;background:#c2410c;border-radius:5px;padding:2px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
 .chart .legend{color:#2f3b33;margin:0 0 8px;font-size:.84rem}
 .chart .legend i{width:11px;height:11px}
 .chart .legend b{color:#14201a}
@@ -427,6 +427,7 @@ function calc(i){
 const $=id=>document.getElementById(id);
 const COLORS=["var(--c1)","var(--c2)","var(--c3)","var(--c4)"];
 const NAMES=["Carregamento","Tiro","Balões","Translado"];
+const SC=["#1d4ed8","#15803d","#7e22ce","#dc2626"]; // cores dos gráficos de tempo por hectare
 
 function read(){ const o={}; FIELDS.forEach(k=>o[k]=parse($(k).value)); return o; }
 
@@ -595,10 +596,10 @@ function stacked(R){
   const max=Math.max(...tots);
   if(!(max>0)) return "";
   let h=`<div class="chart"><h3>Tempo gasto por hectare</h3><p class="cap">Segundos por hectare em cada etapa. Barra menor significa operação mais rápida.</p>`;
-  h+=`<div class="legend">${NAMES.map((n,k)=>`<span><i style="background:${COLORS[k]}"></i>${n}</span>`).join("")}</div>`;
+  h+=`<div class="legend">${NAMES.map((n,k)=>`<span><i style="background:${SC[k]}"></i>${n}</span>`).join("")}</div>`;
   R.forEach((r,i)=>{
     const name=esc(S.sims[i].name), t=tots[i];
-    const segs=r.parts.map((p,k)=>`<span style="width:${t>0?p/max*100:0}%;background:${COLORS[k]}" title="${name}, ${NAMES[k]}: ${fmt(p,0)} s/ha"></span>`).join("");
+    const segs=r.parts.map((p,k)=>`<span style="width:${t>0?p/max*100:0}%;background:${SC[k]}" title="${name}, ${NAMES[k]}: ${fmt(p,0)} s/ha"></span>`).join("");
     h+=`<div class="hb"><div class="hb-name">${name}</div><div class="hb-track">${segs}</div><div class="hb-val">${t>0?fmt(t,0)+" s/ha":"–"}</div></div>`;
   });
   return h+`</div>`;
@@ -665,7 +666,7 @@ function buildPdf(){
   const doc=new jsPDF({orientation:n>4?"landscape":"portrait",unit:"mm",format:"a4"});
   const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), M=14;
   const G=[47,107,58], INK=[24,35,28], MUT=[91,106,95], LINE=[207,216,204], SUNK=[227,233,225];
-  const CC=[[224,165,38],[90,164,105],[122,156,198],[196,106,74]];
+  const CC=[[29,78,216],[21,128,61],[126,34,206],[220,38,38]], OR=[232,89,12], ORD=[194,65,12];
   const now=new Date();
   const dt=now.toLocaleDateString("pt-BR")+" "+now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   const names=S.sims.map((s,i)=>s.name.trim()||("Simulação "+(i+1)));
@@ -716,8 +717,8 @@ function buildPdf(){
     vals.forEach((v,i)=>{
       doc.setFont("helvetica",i===b?"bold":"normal"); doc.setFontSize(8.5); doc.setTextColor(...INK);
       doc.text(doc.splitTextToSize(names[i],nameW-3)[0],M,y+3.6);
-      if(v>0){ doc.setFillColor(...G); doc.rect(x0,y+.6,Math.max(.6,v/mx*bw),4.2,"F"); }
-      doc.setTextColor(...(i===b?G:INK)); doc.text((v>0?fv(v):"–")+(i===b?"  melhor":""),W-M,y+3.6,{align:"right"});
+      if(v>0){ doc.setFillColor(...OR); doc.rect(x0,y+.6,Math.max(.6,v/mx*bw),4.2,"F"); }
+      doc.setTextColor(...(i===b?ORD:INK)); doc.text((v>0?fv(v):"–")+(i===b?"  melhor":""),W-M,y+3.6,{align:"right"});
       y+=rh;
     });
     y+=6;
