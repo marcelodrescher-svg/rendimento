@@ -7,6 +7,7 @@
 <meta name="description" content="Rendimento operacional aeroagrícola pela fórmula de Baltin. Drescher Consultoria.">
 <meta name="theme-color" content="#1d3324">
 <meta name="color-scheme" content="light dark">
+<script>try{var t=localStorage.getItem("rend-aero-tema");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rendimento">
 <link rel="manifest" href="manifest.webmanifest">
@@ -114,6 +115,10 @@ button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,trans
 .note{font-size:.78rem;color:var(--muted);line-height:1.5}
 .note strong{color:var(--fg);font-weight:600}
 /* tabs */
+.theme-sw{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;align-self:flex-start}
+.theme-sw button{border:0;background:transparent;color:var(--muted);padding:7px 14px;border-radius:999px;font:600 .82rem var(--body);cursor:pointer}
+.theme-sw button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+header .theme-sw{margin-top:10px}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--sunk);border-radius:12px;padding:4px}
 .tabs button{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:9px;font:600 .95rem var(--body)}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(10,30,15,.15)}
@@ -204,6 +209,7 @@ input.code{font-size:1.6rem;letter-spacing:.4em;text-align:center;font-variant-n
     <div class="brand">
       <div><div class="brand-tag">Mais uma ferramenta ...</div><div class="brand-name">Drescher Consultoria</div></div>
     </div>
+    <div class="theme-sw" role="group" aria-label="Cor de fundo"></div>
     <h1>Rendimento Aeroagrícola</h1>
     <p>Para usar o aplicativo, faça um cadastro rápido. Ele vale por <strong>12 meses</strong>. Depois disso o aplicativo para de calcular e é preciso baixá-lo de novo pelo link do autor.</p>
     <form class="gate-box" id="gateForm" novalidate autocomplete="on">
@@ -256,6 +262,7 @@ input.code{font-size:1.6rem;letter-spacing:.4em;text-align:center;font-variant-n
     </div>
     <h1>Rendimento Aeroagrícola</h1>
     <p>Rendimento operacional pela fórmula de Baltin. Os resultados são atualizados enquanto você digita.</p>
+    <div class="theme-sw" role="group" aria-label="Cor de fundo"></div>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Telas">
@@ -383,7 +390,7 @@ input.code{font-size:1.6rem;letter-spacing:.4em;text-align:center;font-variant-n
 
   <p class="note"><strong>Como funciona.</strong> A fórmula de Baltin soma o tempo gasto, por hectare, em quatro etapas: carregamento, voo no tiro, balões e translado até a área. O rendimento é 3600 dividido por essa soma em segundos por hectare. A eficiência compara o tempo do tiro com o tempo total. O número total de cargas é arredondado para cima ao planejar a operação.</p>
   <p class="note">Baseado na planilha “Análise do Rendimento Operacional” do Eng. Agr. MSc Marcelo Drescher. Os valores ficam salvos neste aparelho.</p>
-  <p class="note"><strong>Versão 7</strong> · campos com borda</p>
+  <p class="note"><strong>Versão 8</strong> · escolha de fundo claro ou escuro</p>
   <p class="lic" id="licInfo"></p>
 </div>
 
@@ -955,6 +962,24 @@ $("b-mail").addEventListener("click",()=>{
   const fallback=()=>{ const r=document.createRange(); r.selectNodeContents($("mail")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="Selecionado"; setTimeout(()=>b.textContent="Copiar",1800); };
   try{ navigator.clipboard.writeText(addr).then(done,fallback); }catch(e){ fallback(); }
 });
+
+/* escolha de fundo claro/escuro (fica guardada no aparelho) */
+const TEMAKEY="rend-aero-tema";
+const darkMQ=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):null;
+function temaAtual(){ return document.documentElement.getAttribute("data-theme")||(darkMQ&&darkMQ.matches?"dark":"light"); }
+function pintaTema(){ const t=temaAtual(); document.querySelectorAll(".theme-sw button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===t))); }
+function aplicaTema(t){
+  document.documentElement.setAttribute("data-theme",t);
+  try{ localStorage.setItem(TEMAKEY,t); }catch(e){}
+  const m=document.querySelector('meta[name="color-scheme"]'); if(m) m.setAttribute("content",t);
+  pintaTema();
+}
+document.querySelectorAll(".theme-sw").forEach(el=>{
+  el.innerHTML='<button type="button" data-t="light">Fundo claro</button><button type="button" data-t="dark">Fundo escuro</button>';
+  el.addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) aplicaTema(b.dataset.t); });
+});
+if(darkMQ&&darkMQ.addEventListener) darkMQ.addEventListener("change",pintaTema);
+pintaTema();
 
 /* abas */
 function showView(sim){
