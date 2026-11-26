@@ -1,6 +1,6 @@
 // Guarda o aplicativo no aparelho para abrir mesmo sem internet.
 // Ao publicar uma nova versão, aumente o número abaixo (v1 -> v2).
-const CACHE = "rendimento-v5";
+const CACHE = "rendimento-v6";
 const ARQUIVOS = [
   "./", "./index.html", "./config.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png",

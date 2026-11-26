@@ -159,7 +159,9 @@ button:disabled{opacity:.55;cursor:default}
 .hb-val{grid-area:val;font-size:1.02rem;font-weight:700;color:#14201a;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .hb-val em{font-style:normal;font-size:.72rem;font-weight:700;color:#ffffff;background:#c2410c;border-radius:5px;padding:2px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
 .chart .legend{color:#2f3b33;margin:0 0 8px;font-size:.84rem}
-.chart .legend i{width:11px;height:11px}
+.chart .legend{gap:6px 14px;font-size:.9rem;font-weight:600}
+.chart .legend i{width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:6px}
+.hb-track span.seg{color:#ffffff;font-size:.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap}
 .chart .legend b{color:#14201a}
 @media (prefers-reduced-motion:reduce){.bar span{transition:none}}
 @media (max-width:360px){.field{grid-template-columns:1fr 112px}.big{font-size:2.5rem}}
@@ -378,7 +380,7 @@ input.code{font-size:1.6rem;letter-spacing:.4em;text-align:center;font-variant-n
 
   <p class="note"><strong>Como funciona.</strong> A fórmula de Baltin soma o tempo gasto, por hectare, em quatro etapas: carregamento, voo no tiro, balões e translado até a área. O rendimento é 3600 dividido por essa soma em segundos por hectare. A eficiência compara o tempo do tiro com o tempo total. O número total de cargas é arredondado para cima ao planejar a operação.</p>
   <p class="note">Baseado na planilha “Análise do Rendimento Operacional” do Eng. Agr. MSc Marcelo Drescher. Os valores ficam salvos neste aparelho.</p>
-  <p class="note"><strong>Versão 5</strong> · gráficos em laranja</p>
+  <p class="note"><strong>Versão 6</strong> · gráficos em laranja, valores nas barras</p>
   <p class="lic" id="licInfo"></p>
 </div>
 
@@ -600,7 +602,7 @@ function stacked(R){
   h+=`<div class="legend">${NAMES.map((n,k)=>`<span><i style="background:${SC[k]}"></i>${n}</span>`).join("")}</div>`;
   R.forEach((r,i)=>{
     const name=esc(S.sims[i].name), t=tots[i];
-    const segs=r.parts.map((p,k)=>`<span style="width:${t>0?p/max*100:0}%;background:${SC[k]}" title="${name}, ${NAMES[k]}: ${fmt(p,0)} s/ha"></span>`).join("");
+    const segs=r.parts.map((p,k)=>{ const w=t>0?p/max*100:0; return `<span class="seg" style="width:${w}%;background:${SC[k]}" title="${name}, ${NAMES[k]}: ${fmt(p,0)} s/ha">${w>=9?fmt(p,0):""}</span>`; }).join("");
     h+=`<div class="hb"><div class="hb-name">${name}</div><div class="hb-track">${segs}</div><div class="hb-val">${t>0?fmt(t,0)+" s/ha":"–"}</div></div>`;
   });
   return h+`</div>`;
@@ -727,13 +729,13 @@ function buildPdf(){
   function stackedPdf(){
     const tots=R.map(r=>r.parts.reduce((a,b)=>a+b,0)), mx=Math.max(...tots); if(!(mx>0)) return;
     need(18+n*rh+4); head("Tempo gasto por hectare","Segundos por hectare em cada etapa. Barra menor significa operação mais rápida.");
-    let lx=M; doc.setFontSize(8);
-    NAMES.forEach((nm,k)=>{ doc.setFillColor(...CC[k]); doc.rect(lx,y-2.4,3,3,"F"); doc.setTextColor(...MUT); doc.text(nm,lx+4.2,y); lx+=doc.getTextWidth(nm)+11; });
+    y+=2; let lx=M; doc.setFontSize(8.5);
+    NAMES.forEach((nm,k)=>{ doc.setFillColor(...CC[k]); doc.rect(lx,y-3.2,4,4,"F"); doc.setTextColor(...INK); doc.text(nm,lx+5.8,y); lx+=doc.getTextWidth(nm)+14; });
     y+=4;
     R.forEach((r,i)=>{
       doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...INK);
       doc.text(doc.splitTextToSize(names[i],nameW-3)[0],M,y+3.6);
-      let x=x0; r.parts.forEach((p,k)=>{ const w=p/mx*bw; if(w>0){ doc.setFillColor(...CC[k]); doc.rect(x,y+.6,w,4.2,"F"); x+=w; } });
+      let x=x0; r.parts.forEach((p,k)=>{ const w=p/mx*bw; if(w>0){ doc.setFillColor(...CC[k]); doc.rect(x,y+.6,w,4.2,"F"); if(w>=7){ doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(255,255,255); doc.text(fmt(p,0),x+w/2,y+3.6,{align:"center"}); } x+=w; } }); doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...INK);
       doc.text(tots[i]>0?fmt(tots[i],0)+" s/ha":"–",W-M,y+3.6,{align:"right"});
       y+=rh;
     });
