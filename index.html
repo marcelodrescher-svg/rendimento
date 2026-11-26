@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rendimento Aeroagrícola</title>
+<meta name="description" content="Rendimento operacional aeroagrícola pela fórmula de Baltin. Drescher Consultoria.">
+<meta name="theme-color" content="#1d3324">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rendimento">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one mobile column — sticky result panel up top, input groups below, details at the end */
+:root{
+  --bg:#eef2ec; --surface:#ffffff; --sunk:#e3e9e1; --line:#cfd8cc;
+  --fg:#18231c; --muted:#5b6a5f;
+  --accent:#2f6b3a; --accent-fg:#ffffff;
+  --panel:#1d3324; --panel-fg:#f2f6ef; --panel-muted:#a9bcaa;
+  --amber:#e0a526; --warn:#a64b1f;
+  --c1:#e0a526; --c2:#5aa469; --c3:#7a9cc6; --c4:#c46a4a;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1611; --surface:#17211a; --sunk:#1f2b22; --line:#2c3a2f;
+  --fg:#e7eee6; --muted:#97a899;
+  --accent:#6fbf7d; --accent-fg:#0f1611;
+  --panel:#203a28; --panel-fg:#f2f6ef; --panel-muted:#a9bcaa;
+  --amber:#f0b93c; --warn:#ef8a5b;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1611; --surface:#17211a; --sunk:#1f2b22; --line:#2c3a2f;
+  --fg:#e7eee6; --muted:#97a899;
+  --accent:#6fbf7d; --accent-fg:#0f1611;
+  --panel:#203a28; --panel-fg:#f2f6ef; --panel-muted:#a9bcaa;
+  --amber:#f0b93c; --warn:#ef8a5b;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:700;font-size:1.9rem;letter-spacing:.01em;margin:0;line-height:1.05;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);font-size:.86rem}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 12px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.brand-tag{font-size:.8rem;font-style:italic;color:var(--muted);line-height:1.2}
+.brand-name{font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.brand-mail{font-size:.85rem;color:var(--muted);overflow-wrap:anywhere;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.brand-mail a{color:var(--accent);font-weight:500;text-decoration:underline;text-underline-offset:2px;user-select:all}
+.brand-mail button.copy{padding:4px 10px;font-size:.75rem;border-radius:7px}
+
+/* sticky result panel */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.panel{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);color:var(--panel-fg);
+  border-radius:var(--r);padding:14px 16px 12px;box-shadow:0 6px 18px rgba(10,30,15,.18)}
+.panel .row{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;align-items:end}
+.panel .stack{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--panel-muted);font-weight:600}
+.big{font-family:var(--display);font-weight:700;font-size:3rem;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:1.05rem;font-weight:600;color:var(--panel-muted);margin-left:4px}
+.mid{font-family:var(--display);font-weight:600;font-size:1.75rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.mid small{font-size:.95rem;color:var(--panel-muted);margin-left:2px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:12px;background:rgba(255,255,255,.12)}
+.bar span{display:block;height:100%;transition:width .25s}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:.72rem;color:var(--panel-muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:baseline}
+.legend b{color:var(--panel-fg);font-weight:600;font-variant-numeric:tabular-nums}
+.panel .msg{margin-top:8px;font-size:.82rem;color:var(--amber)}
+
+/* input groups */
+fieldset{border:0;margin:0;padding:0}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.group legend{float:left;width:100%;padding:10px 14px 6px;font-family:var(--display);font-weight:600;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.field{clear:both;display:grid;grid-template-columns:1fr 132px;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--line)}
+.field label{font-size:.9rem;min-width:0}
+.field label .hint{display:block;font-size:.74rem;color:var(--muted)}
+.inp{display:flex;align-items:center;background:var(--sunk);border:1px solid transparent;border-radius:8px;padding:0 10px 0 0}
+.inp:focus-within{border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+.inp input{width:100%;min-width:0;border:0;background:transparent;color:var(--fg);font:600 1.05rem/1 var(--body);padding:10px 4px 10px 10px;text-align:right;font-variant-numeric:tabular-nums;outline:none}
+.inp span{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.field.bad .inp{border-color:var(--warn)}
+.field.speed{grid-template-columns:1fr}
+.field.speed .pair{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.field.speed .eq{color:var(--muted);font-size:.9rem}
+
+/* results */
+.results{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.results h2{margin:0;padding:12px 14px 6px;font-family:var(--display);font-weight:600;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.results dl{margin:0}
+.results .r{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-top:1px solid var(--line)}
+.results dt{font-size:.9rem;color:var(--muted);min-width:0}
+.results dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.results .r.hl dd{color:var(--accent);font-size:1.05rem}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+button{font:600 .9rem var(--body);border-radius:10px;padding:11px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+.note{font-size:.78rem;color:var(--muted);line-height:1.5}
+.note strong{color:var(--fg);font-weight:600}
+/* tabs */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--sunk);border-radius:12px;padding:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:9px;font:600 .95rem var(--body)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(10,30,15,.15)}
+.view{display:flex;flex-direction:column;gap:18px}
+body.sim .wrap{max-width:980px}
+
+/* simulations */
+.simsetup{padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.sec-title{margin:8px 0 0;font-family:var(--display);font-weight:600;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.sub{margin:0;color:var(--muted);font-size:.86rem}
+.setup-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.inp.n{width:150px}
+.inp.n input{text-align:center}
+.actions.small button{padding:8px 12px;font-size:.82rem}
+.example-note{margin:0;font-size:.82rem;color:var(--muted);background:var(--sunk);border-radius:10px;padding:8px 12px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);-webkit-overflow-scrolling:touch}
+table.sim{border-collapse:separate;border-spacing:0;width:100%;font-size:.86rem}
+table.sim th,table.sim td{padding:6px 8px;border-top:1px solid var(--line);text-align:right;vertical-align:middle}
+table.sim thead th{border-top:0;padding-top:10px}
+table.sim th[scope="row"],table.sim thead th:first-child{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;font-weight:500;min-width:150px;max-width:200px;border-right:1px solid var(--line)}
+table.sim th[scope="row"] .u{display:block;font-size:.72rem;color:var(--muted);font-weight:400}
+table.sim tr.sec th{text-align:left;background:var(--sunk);font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-size:.92rem;padding:6px 0}
+table.sim tr.sec th span{position:sticky;left:10px;padding-left:10px}
+table.sim td input,table.sim thead input{width:88px;border:1px solid transparent;border-radius:7px;background:var(--sunk);color:var(--fg);font:600 .92rem var(--body);padding:8px 6px;text-align:right;font-variant-numeric:tabular-nums}
+table.sim thead input{text-align:center;font-weight:700;color:var(--accent)}
+table.sim input:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);border-color:var(--accent)}
+table.sim tr.out td{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.sim tr.out.key td{font-size:.95rem}
+table.sim td.best{color:var(--accent)}
+table.sim td.best::after{content:" ★";font-size:.8em}
+
+.report{padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.pdf-msg{margin:0;font-size:.84rem;color:var(--fg);background:var(--sunk);border-radius:8px;padding:8px 10px}
+.pdf-msg.err{color:var(--warn)}
+button:disabled{opacity:.55;cursor:default}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 14px;min-width:0}
+.chart h3{margin:0;font-family:var(--display);font-weight:600;font-size:1.1rem;letter-spacing:.02em}
+.chart .cap{margin:0 0 10px;font-size:.76rem;color:var(--muted)}
+.hb{display:grid;grid-template-columns:minmax(64px,28%) 1fr auto;align-items:center;gap:8px;padding:5px 0}
+.hb-name{font-size:.84rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb-track{height:16px;display:flex;gap:2px;min-width:0}
+.hb-track span{display:block;height:100%;min-width:0}
+.hb-track span:last-child{border-radius:0 4px 4px 0}
+.hb-track.one span{background:var(--accent)}
+.hb-val{font-size:.84rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.hb-val em{font-style:normal;font-size:.7rem;font-weight:600;color:var(--accent);margin-left:4px;text-transform:uppercase;letter-spacing:.06em}
+.chart .legend{color:var(--muted);margin:0 0 8px}
+.chart .legend b{color:var(--fg)}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+@media (max-width:360px){.field{grid-template-columns:1fr 112px}.big{font-size:2.5rem}}
+
+/* cadastro e licença */
+.gate{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.gate-card{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.gate-card h1{font-family:var(--display);font-weight:700;font-size:1.9rem;margin:0;line-height:1.05}
+.gate-card p{margin:0;font-size:.92rem;color:var(--muted)}
+.gate-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.gf{display:flex;flex-direction:column;gap:5px}
+.gf label{font-size:.86rem;font-weight:600}
+.gf input{font:500 1rem var(--body);color:var(--fg);background:var(--sunk);border:1px solid transparent;border-radius:9px;padding:11px 12px;width:100%}
+.gf input:focus{outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent);border-color:var(--accent)}
+.consent{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:.84rem;line-height:1.45;background:var(--sunk);border-radius:9px;padding:10px 12px}
+.consent input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent)}
+.gate-card .gate-msg{font-size:.86rem;color:var(--warn);margin:0;font-weight:500}
+.gate-card .gate-msg.ok{color:var(--accent)}
+.big-cta{width:100%;padding:14px;font-size:1rem}
+.lic{font-size:.78rem;color:var(--muted)}
+.gbox{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.gbtn{display:flex;justify-content:center;min-height:44px}
+.gok{margin:0;font-size:.86rem;font-weight:600;color:var(--accent);text-align:center}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.8rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.hintl{font-weight:400;color:var(--muted);font-size:.78rem}
+.gf input[readonly]{opacity:.8}
+input.code{font-size:1.6rem;letter-spacing:.4em;text-align:center;font-variant-numeric:tabular-nums}
+.testmode{font-size:.78rem;background:var(--amber);color:#1d1400;border-radius:8px;padding:6px 10px}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <div class="brand">
+      <div><div class="brand-tag">Mais uma ferramenta ...</div><div class="brand-name">Drescher Consultoria</div></div>
+    </div>
+    <h1>Rendimento Aeroagrícola</h1>
+    <p>Para usar o aplicativo, faça um cadastro rápido. Ele vale por <strong>12 meses</strong>. Depois disso o aplicativo para de calcular e é preciso baixá-lo de novo pelo link do autor.</p>
+    <form class="gate-box" id="gateForm" novalidate autocomplete="on">
+      <div class="gbox" id="gBox">
+        <div id="gBtn" class="gbtn"></div>
+        <p class="gok" id="gOk" hidden>E-mail confirmado pelo Google. Falta só o telefone.</p>
+        <div class="or" id="gOr"><span>ou cadastre com o seu e-mail</span></div>
+      </div>
+      <div class="gf"><label for="gNome">Nome completo</label><input id="gNome" name="name" autocomplete="name" required maxlength="120"></div>
+      <div class="gf"><label for="gEmail">E-mail <span class="hintl">(você vai receber um código para confirmar)</span></label><input id="gEmail" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="120"></div>
+      <div class="gf"><label for="gTel">Telefone (WhatsApp)</label><input id="gTel" name="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="(00) 00000-0000" required maxlength="30"></div>
+      <label class="consent" for="gAceite"><input type="checkbox" id="gAceite"><span>Estou ciente de que meu <strong>nome, e-mail e telefone ficam registrados com o autor</strong> (Drescher Consultoria, marcelodrescher@gmail.com) para contato e controle da licença de uso, conforme a LGPD. Posso pedir a remoção dos meus dados por esse e-mail.</span></label>
+      <p class="gate-msg" id="gateMsg" role="status" hidden></p>
+      <button type="submit" class="primary big-cta" id="gateBtn">Enviar código de confirmação</button>
+    </form>
+
+    <form class="gate-box" id="codeForm" novalidate hidden>
+      <p>Enviamos um código de 6 dígitos para <strong id="codeEmail"></strong>. Abra o seu e-mail (confira também o spam) e digite o código abaixo. Ele vale por 30 minutos.</p>
+      <div class="gf"><label for="gCode">Código de confirmação</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" class="code"></div>
+      <p class="gate-msg" id="codeMsg" role="status" hidden></p>
+      <button type="submit" class="primary big-cta" id="codeBtn">Confirmar e usar</button>
+      <div class="actions small">
+        <button type="button" id="codeResend">Reenviar código</button>
+        <button type="button" id="codeBack">Corrigir e-mail</button>
+      </div>
+    </form>
+    <p class="testmode" id="testMode" hidden>Modo de teste: o servidor de cadastros ainda não foi configurado em config.js. Nada é enviado; o cadastro fica só neste aparelho.</p>
+  </div>
+</div>
+
+<div class="gate" id="expired" hidden>
+  <div class="gate-card">
+    <div class="brand">
+      <div><div class="brand-tag">Mais uma ferramenta ...</div><div class="brand-name">Drescher Consultoria</div></div>
+    </div>
+    <h1 id="expTitle">Licença vencida</h1>
+    <p id="expText">O prazo de 12 meses deste aplicativo terminou. Para continuar usando, baixe novamente pelo link do autor e faça um novo cadastro.</p>
+    <div class="gate-box">
+      <p>Contato do autor: <strong>marcelodrescher@gmail.com</strong></p>
+      <button type="button" class="primary big-cta" id="expRenew">Baixar novamente e cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div><div class="brand-tag">Mais uma ferramenta ...</div><div class="brand-name">Drescher Consultoria</div></div>
+      <div class="brand-mail"><a id="mail" href="mailto:marcelodrescher@gmail.com?subject=Rendimento%20Aeroagr%C3%ADcola">marcelodrescher@gmail.com</a><button type="button" id="b-mail" class="copy">Copiar</button></div>
+    </div>
+    <h1>Rendimento Aeroagrícola</h1>
+    <p>Rendimento operacional pela fórmula de Baltin. Os resultados são atualizados enquanto você digita.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Telas">
+    <button type="button" role="tab" id="tab-calc" aria-controls="view-calc" aria-selected="true">Calculadora</button>
+    <button type="button" role="tab" id="tab-sim" aria-controls="view-sim" aria-selected="false">Simulações</button>
+  </nav>
+
+  <div id="view-sim" class="view" role="tabpanel" aria-labelledby="tab-sim" hidden>
+    <section class="group simsetup">
+      <h2 class="sec-title">Quantas simulações?</h2>
+      <p class="sub">Cada simulação é uma coluna da tabela: uma área, uma aeronave ou uma situação diferente.</p>
+      <div class="setup-row">
+        <div class="inp n"><input id="simN" type="number" min="2" max="8" step="1" inputmode="numeric" aria-label="Número de simulações"><span>de 2 a 8</span></div>
+        <button type="button" class="primary" id="b-simN">Montar tabela</button>
+      </div>
+      <div class="actions small">
+        <button type="button" id="b-simCopy">Copiar dados da calculadora</button>
+        <button type="button" id="b-simEx">Restaurar exemplo</button>
+      </div>
+    </section>
+
+    <p class="example-note" id="simExNote">Exemplo: as três colunas só diferem na distância da pista até a área. Altere qualquer valor para fazer a sua comparação.</p>
+
+    <div class="tablewrap" id="simTable"></div>
+
+    <section class="group report">
+      <div>
+        <h2 class="sec-title">Relatório em PDF</h2>
+        <p class="sub">Tabela de dados, resultados e gráficos das simulações em um arquivo pronto para enviar por WhatsApp ou e-mail.</p>
+      </div>
+      <button type="button" class="primary" id="b-pdf">Gerar relatório PDF</button>
+      <p class="pdf-msg" id="pdfMsg" role="status" hidden></p>
+    </section>
+
+    <section class="charts" id="simCharts" aria-label="Gráficos comparativos"></section>
+  </div>
+
+  <div id="view-calc" class="view" role="tabpanel" aria-labelledby="tab-calc">
+  <section class="panel" aria-live="polite" aria-label="Resultado principal">
+    <div class="row">
+      <div>
+        <div class="lbl">Rendimento operacional</div>
+        <div class="big"><span id="o-rend">0</span><small>ha/h</small></div>
+      </div>
+      <div class="stack">
+        <div>
+          <div class="lbl">Tempo para a área</div>
+          <div class="mid" id="o-tempo">0 h 00 min</div>
+        </div>
+        <div>
+          <div class="lbl">Eficiência da operação</div>
+          <div class="mid"><span id="o-efic">0</span><small>%</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="bar" id="o-bar" aria-hidden="true"></div>
+    <div class="legend" id="o-legend"></div>
+    <div class="msg" id="o-msg" hidden></div>
+  </section>
+
+  <form id="f" novalidate autocomplete="off">
+    <div class="wrap" style="gap:14px">
+      <fieldset class="group">
+        <legend>Aeronave e carga</legend>
+        <div class="field"><label for="carreg">Carregamento e rolagem<span class="hint">tempo por carga</span></label><div class="inp"><input id="carreg" inputmode="decimal"><span>min</span></div></div>
+        <div class="field"><label for="dose">Dosagem de aplicação<span class="hint">volume de calda por hectare</span></label><div class="inp"><input id="dose" inputmode="decimal"><span>L/ha</span></div></div>
+        <div class="field"><label for="carga">Carga</label><div class="inp"><input id="carga" inputmode="decimal"><span>L</span></div></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Voo</legend>
+        <div class="field speed"><label for="vApl">Velocidade em aplicação<span class="hint">digite em uma unidade, a outra é preenchida (1 milha = 1,609 km)</span></label>
+          <div class="pair"><div class="inp"><input id="vApl" inputmode="decimal" aria-label="Velocidade em aplicação em milhas por hora"><span>mi/h</span></div><span class="eq">=</span><div class="inp"><input id="vAplKm" inputmode="decimal" aria-label="Velocidade em aplicação em quilômetros por hora"><span>km/h</span></div></div></div>
+        <div class="field speed"><label for="vTrans">Velocidade em translado<span class="hint">milhas terrestres por hora ou km/h</span></label>
+          <div class="pair"><div class="inp"><input id="vTrans" inputmode="decimal" aria-label="Velocidade em translado em milhas por hora"><span>mi/h</span></div><span class="eq">=</span><div class="inp"><input id="vTransKm" inputmode="decimal" aria-label="Velocidade em translado em quilômetros por hora"><span>km/h</span></div></div></div>
+        <div class="field"><label for="faixa">Faixa efetiva</label><div class="inp"><input id="faixa" inputmode="decimal"><span>m</span></div></div>
+        <div class="field"><label for="balao">Tempo de balão<span class="hint">manobra de retorno</span></label><div class="inp"><input id="balao" inputmode="decimal"><span>s</span></div></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Área</legend>
+        <div class="field"><label for="area">Área total da aplicação</label><div class="inp"><input id="area" inputmode="decimal"><span>ha</span></div></div>
+        <div class="field"><label for="compr">Comprimento médio dos tiros</label><div class="inp"><input id="compr" inputmode="decimal"><span>m</span></div></div>
+        <div class="field"><label for="dist">Distância média pista–área</label><div class="inp"><input id="dist" inputmode="decimal"><span>km</span></div></div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Produto e valor</legend>
+        <div class="field"><label for="prod">Produto por hectare</label><div class="inp"><input id="prod" inputmode="decimal"><span>L/ha</span></div></div>
+        <div class="field"><label for="adj">Adjuvante por hectare</label><div class="inp"><input id="adj" inputmode="decimal"><span>L/ha</span></div></div>
+        <div class="field"><label for="valorHora">Valor bruto por hora de voo</label><div class="inp"><input id="valorHora" inputmode="decimal"><span>R$/h</span></div></div>
+      </fieldset>
+    </div>
+  </form>
+
+  <section class="results">
+    <h2>Resultados da operação</h2>
+    <dl>
+      <div class="r hl"><dt>Rendimento segundo a fórmula</dt><dd id="r-rend"></dd></div>
+      <div class="r"><dt>Tempo necessário</dt><dd id="r-tempo"></dd></div>
+      <div class="r"><dt>Eficiência da operação</dt><dd id="r-efic"></dd></div>
+      <div class="r hl"><dt>Valor por hectare</dt><dd id="r-valHa"></dd></div>
+      <div class="r hl"><dt>Valor total</dt><dd id="r-valTot"></dd></div>
+    </dl>
+  </section>
+
+  <section class="results">
+    <h2>Dados complementares</h2>
+    <dl>
+      <div class="r"><dt>Rendimento no tiro</dt><dd id="r-tiro"></dd></div>
+      <div class="r"><dt>Rendimento teórico</dt><dd id="r-teor"></dd></div>
+      <div class="r"><dt>Hectares por carga</dt><dd id="r-haCarga"></dd></div>
+      <div class="r"><dt>Número total de cargas</dt><dd id="r-cargas"></dd></div>
+      <div class="r"><dt>Total de produto</dt><dd id="r-totProd"></dd></div>
+      <div class="r"><dt>Total de veículo (água/óleo)</dt><dd id="r-totVeic"></dd></div>
+      <div class="r"><dt>Total de adjuvante</dt><dd id="r-totAdj"></dd></div>
+    </dl>
+  </section>
+
+  <div class="actions">
+    <button type="button" class="primary" id="b-ex">Carregar exemplo</button>
+    <button type="button" id="b-clear">Limpar tudo</button>
+  </div>
+  </div>
+
+  <p class="note"><strong>Como funciona.</strong> A fórmula de Baltin soma o tempo gasto, por hectare, em quatro etapas: carregamento, voo no tiro, balões e translado até a área. O rendimento é 3600 dividido por essa soma em segundos por hectare. A eficiência compara o tempo do tiro com o tempo total. O número total de cargas é arredondado para cima ao planejar a operação.</p>
+  <p class="note">Baseado na planilha “Análise do Rendimento Operacional” do Eng. Agr. MSc Marcelo Drescher. Os valores ficam salvos neste aparelho.</p>
+  <p class="lic" id="licInfo"></p>
+</div>
+
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/jspdf.plugin.autotable.min.js"></script>
+<script>
+const FIELDS=["carreg","dose","carga","vApl","vTrans","faixa","balao","area","compr","dist","prod","adj","valorHora"];
+const NM=1609; // milha terrestre em metros (mesmo valor da planilha)
+const SPEEDS=[["vApl","vAplKm"],["vTrans","vTransKm"]];
+const REQUIRED={carga:"carga",dose:"dosagem",vApl:"velocidade em aplicação",vTrans:"velocidade em translado",faixa:"faixa efetiva",compr:"comprimento dos tiros",area:"área total"};
+const EXAMPLE={carreg:4,dose:30,carga:500,vApl:100,vTrans:100,faixa:18,balao:30,area:500,compr:1000,dist:12,prod:5,adj:0.5,valorHora:1500};
+const KEY="rend-aero-v1";
+const nf=(d)=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmt=(v,d=0)=>nf(d).format(v);
+const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+
+function parse(s){ if(s==null) return 0; s=String(s).trim().replace(/\s/g,""); if(!s) return 0;
+  if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isFinite(n)?n:0; }
+
+function calc(i){
+  const {carreg,dose,carga,vApl,vTrans,faixa,balao,compr,dist,area,prod,adj,valorHora}=i;
+  const r={ok:carga>0&&dose>0&&vApl>0&&vTrans>0&&faixa>0&&compr>0&&area>0};
+  const vA=vApl*NM/3600, vT=vTrans*NM/3600;               // mi/h -> m/s
+  // tempo por m² (s/m²) de cada etapa
+  const t1=((carreg*60)*(dose/10000))/carga;               // carregamento
+  const t2=1/(vA*faixa);                                    // tiro
+  const t3=balao/(faixa*compr);                             // balões
+  const t4=(2*(dose/10000)*(dist*1000))/(vT*carga);         // translado
+  r.parts=r.ok?[t1,t2,t3,t4].map(x=>x*10000):[0,0,0,0];      // s/ha
+  r.rend=r.ok?3600/(10000*(t1+t2+t3+t4)):0;
+  r.horas=r.ok?area/r.rend:0;
+  r.h=Math.floor(r.horas); r.min=Math.floor((r.horas-r.h)*60);
+  r.efic=r.ok?(area*10000)/(36*faixa*vA*r.horas):0;
+  r.tiro=vA*60*faixa/10000; r.teor=r.tiro*60;            // ha/min no tiro
+  r.haCarga=dose>0&&carga>0?carga/dose:0;
+  r.cargas=dose>0&&carga>0?area/r.haCarga:0;
+  r.totProd=prod*area;
+  r.totVeic=prod>0?(dose-prod-(adj>0?adj:0))*area:0;
+  r.totAdj=adj>0?adj*area:0;
+  r.valHa=valorHora>0&&area>0&&r.rend>0?valorHora/r.rend:0;
+  r.valTot=valorHora>0&&area>0&&r.rend>0?valorHora*r.horas:0;
+  return r;
+}
+
+const $=id=>document.getElementById(id);
+const COLORS=["var(--c1)","var(--c2)","var(--c3)","var(--c4)"];
+const NAMES=["Carregamento","Tiro","Balões","Translado"];
+
+function read(){ const o={}; FIELDS.forEach(k=>o[k]=parse($(k).value)); return o; }
+
+function render(){
+  const i=read(), r=calc(i);
+  const missing=Object.keys(REQUIRED).filter(k=>!(i[k]>0));
+  FIELDS.forEach(k=>$(k).closest(".field").classList.toggle("bad",missing.includes(k)&&$(k).value.trim()!==""));
+  const msg=$("o-msg");
+  if(!r.ok){ msg.hidden=false; msg.textContent="Preencha com valores maiores que zero: "+missing.map(k=>REQUIRED[k]).join(", ")+"."; }
+  else msg.hidden=true;
+
+  const tempo=r.ok?`${r.h} h ${String(r.min).padStart(2,"0")} min`:"–";
+  $("o-rend").textContent=r.ok?fmt(r.rend,1):"–";
+  $("o-tempo").textContent=tempo;
+  $("o-efic").textContent=r.ok?fmt(r.efic,1):"–";
+
+  const tot=r.parts.reduce((a,b)=>a+b,0);
+  $("o-bar").innerHTML=r.parts.map((p,k)=>`<span style="width:${tot?p/tot*100:0}%;background:${COLORS[k]}"></span>`).join("");
+  $("o-legend").innerHTML=r.ok?r.parts.map((p,k)=>`<span><i style="background:${COLORS[k]}"></i>${NAMES[k]} <b>${fmt(p,0)} s/ha</b></span>`).join(""):"";
+
+  const set=(id,v)=>$(id).textContent=v;
+  set("r-rend",r.ok?fmt(r.rend,2)+" ha/h":"–");
+  set("r-tempo",tempo);
+  set("r-efic",r.ok?fmt(r.efic,1)+" %":"–");
+  set("r-valHa",r.valHa?brl.format(r.valHa):"–");
+  set("r-valTot",r.valTot?brl.format(r.valTot):"–");
+  set("r-tiro",fmt(r.tiro,2)+" ha/min");
+  set("r-teor",fmt(r.teor,1)+" ha/h");
+  set("r-haCarga",fmt(r.haCarga,2)+" ha");
+  set("r-cargas",r.cargas?`${fmt(r.cargas,1)} (${Math.ceil(r.cargas-1e-9)} voos)`:"0");
+  set("r-totProd",fmt(r.totProd,0)+" L");
+  set("r-totVeic",fmt(r.totVeic,0)+" L");
+  set("r-totAdj",fmt(r.totAdj,0)+" L");
+
+  try{ localStorage.setItem(KEY,JSON.stringify(Object.fromEntries(FIELDS.map(k=>[k,$(k).value])))); }catch(e){}
+}
+
+const num1=v=>{ const s=nf(1).format(v); return s.endsWith(",0")?s.slice(0,-2):s; };
+function syncSpeed(from){
+  for(const [mi,km] of SPEEDS){
+    if(from===mi){ const v=parse($(mi).value); $(km).value=$(mi).value.trim()===""?"":num1(v*NM/1000); }
+    else if(from===km){ const v=parse($(km).value); $(mi).value=$(km).value.trim()===""?"":num1(v*1000/NM); }
+  }
+}
+function fill(o){ FIELDS.forEach(k=>$(k).value=o[k]==null||o[k]===""?"":String(o[k]).replace(".",",")); SPEEDS.forEach(([mi])=>syncSpeed(mi)); render(); }
+
+let saved=null; try{ saved=JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+fill(saved&&typeof saved==="object"?saved:EXAMPLE);
+
+$("f").addEventListener("input",e=>{ syncSpeed(e.target.id); render(); });
+$("f").addEventListener("submit",e=>e.preventDefault());
+$("b-ex").addEventListener("click",()=>fill(EXAMPLE));
+$("b-clear").addEventListener("click",()=>{ fill({}); $("carreg").focus(); });
+[...FIELDS,"vAplKm","vTransKm"].forEach(k=>$(k).addEventListener("focus",e=>e.target.select()));
+
+/* ---------- Simulações ---------- */
+const SIMKEY="rend-aero-sims-v1";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const IN_ROWS=[
+  {sec:"Aeronave e carga"},
+  {k:"carreg",l:"Carregamento e rolagem",u:"min"},
+  {k:"dose",l:"Dosagem de aplicação",u:"L/ha"},
+  {k:"carga",l:"Carga",u:"L"},
+  {sec:"Voo"},
+  {k:"vApl",l:"Velocidade em aplicação",u:"mi/h"},
+  {k:"vAplKm",l:"Velocidade em aplicação",u:"km/h",mi:"vApl"},
+  {k:"vTrans",l:"Velocidade em translado",u:"mi/h"},
+  {k:"vTransKm",l:"Velocidade em translado",u:"km/h",mi:"vTrans"},
+  {k:"faixa",l:"Faixa efetiva",u:"m"},
+  {k:"balao",l:"Tempo de balão",u:"s"},
+  {sec:"Área"},
+  {k:"area",l:"Área total da aplicação",u:"ha"},
+  {k:"compr",l:"Comprimento médio dos tiros",u:"m"},
+  {k:"dist",l:"Distância média pista–área",u:"km"},
+  {sec:"Produto e valor"},
+  {k:"prod",l:"Produto por hectare",u:"L/ha"},
+  {k:"adj",l:"Adjuvante por hectare",u:"L/ha"},
+  {k:"valorHora",l:"Valor bruto por hora de voo",u:"R$/h"}
+];
+const hm=r=>r.ok?`${r.h} h ${String(r.min).padStart(2,"0")} min`:"–";
+const OUT_ROWS=[
+  {k:"rend",l:"Rendimento operacional",u:"ha/h",key:true,best:"max",f:r=>r.ok?fmt(r.rend,2):"–"},
+  {k:"horas",l:"Tempo necessário",u:"horas e minutos",key:true,best:"min",f:hm},
+  {k:"efic",l:"Eficiência da operação",u:"%",key:true,best:"max",f:r=>r.ok?fmt(r.efic,1)+" %":"–"},
+  {k:"valHa",l:"Valor por hectare",u:"R$/ha",key:true,f:r=>r.valHa?brl.format(r.valHa):"–"},
+  {k:"valTot",l:"Valor total",u:"R$",key:true,f:r=>r.valTot?brl.format(r.valTot):"–"},
+  {k:"tiro",l:"Rendimento no tiro",u:"ha/min",f:r=>fmt(r.tiro,2)},
+  {k:"teor",l:"Rendimento teórico",u:"ha/h",f:r=>fmt(r.teor,1)},
+  {k:"haCarga",l:"Hectares por carga",u:"ha",f:r=>fmt(r.haCarga,2)},
+  {k:"cargas",l:"Número total de cargas",u:"voos arredondados",f:r=>r.cargas?`${fmt(r.cargas,1)} (${Math.ceil(r.cargas-1e-9)})`:"0"},
+  {k:"totProd",l:"Total de produto",u:"L",f:r=>fmt(r.totProd,0)},
+  {k:"totVeic",l:"Total de veículo (água/óleo)",u:"L",f:r=>fmt(r.totVeic,0)},
+  {k:"totAdj",l:"Total de adjuvante",u:"L",f:r=>fmt(r.totAdj,0)}
+];
+const strVals=o=>Object.fromEntries(FIELDS.map(k=>[k,o[k]==null?"":String(o[k]).replace(".",",")]));
+const letter=i=>String.fromCharCode(65+i);
+function simExample(){
+  return {example:true,sims:[5,12,25].map((d,i)=>({name:"Área "+letter(i),v:strVals({...EXAMPLE,dist:d})}))};
+}
+let S=null;
+try{ S=JSON.parse(localStorage.getItem(SIMKEY)); }catch(e){}
+if(!S||!Array.isArray(S.sims)||S.sims.length<2) S=simExample();
+const saveSims=()=>{ try{ localStorage.setItem(SIMKEY,JSON.stringify(S)); }catch(e){} };
+const simVals=s=>{ const o={}; FIELDS.forEach(k=>o[k]=parse(s.v[k])); return o; };
+
+function buildTable(){
+  const n=S.sims.length;
+  $("simN").value=n;
+  let h=`<table class="sim"><thead><tr><th scope="col">Dado</th>`;
+  S.sims.forEach((s,i)=>h+=`<th scope="col"><input data-i="${i}" data-k="name" value="${esc(s.name)}" aria-label="Nome da simulação ${i+1}" maxlength="24"></th>`);
+  h+=`</tr></thead><tbody>`;
+  for(const row of IN_ROWS){
+    if(row.sec){ h+=`<tr class="sec"><th colspan="${n+1}"><span>${row.sec}</span></th></tr>`; continue; }
+    h+=`<tr><th scope="row">${row.l}<span class="u">${row.u}</span></th>`;
+    S.sims.forEach((s,i)=>{
+      const val=row.mi?(s.v[row.mi].trim()===""?"":num1(parse(s.v[row.mi])*NM/1000)):s.v[row.k];
+      h+=`<td><input data-i="${i}" data-k="${row.k}" inputmode="decimal" value="${esc(val)}" aria-label="${row.l} (${row.u}), ${esc(s.name)}"></td>`;
+    });
+    h+=`</tr>`;
+  }
+  h+=`<tr class="sec"><th colspan="${n+1}"><span>Resultados</span></th></tr>`;
+  for(const row of OUT_ROWS){
+    h+=`<tr class="out${row.key?" key":""}"><th scope="row">${row.l}<span class="u">${row.u}</span></th>`;
+    S.sims.forEach((s,i)=>h+=`<td id="so-${row.k}-${i}"></td>`);
+    h+=`</tr>`;
+  }
+  $("simTable").innerHTML=h+`</tbody></table>`;
+  updateSims();
+}
+
+function updateSims(){
+  $("simExNote").hidden=!S.example;
+  const R=S.sims.map(s=>calc(simVals(s)));
+  for(const row of OUT_ROWS){
+    const vals=R.map(r=>r.ok?r[row.k]:null);
+    let bestI=-1;
+    if(row.best){
+      const ok=vals.filter(v=>v!=null);
+      if(ok.length>1&&Math.max(...ok)-Math.min(...ok)>1e-9){
+        const target=row.best==="max"?Math.max(...ok):Math.min(...ok);
+        bestI=vals.findIndex(v=>v===target);
+      }
+    }
+    R.forEach((r,i)=>{ const td=$(`so-${row.k}-${i}`); if(!td) return; td.textContent=row.f(r); td.classList.toggle("best",i===bestI); });
+  }
+  renderCharts(R);
+  saveSims();
+}
+
+function hbars(title,cap,items,fmtv,best){
+  const ok=items.map(x=>x.v).filter(v=>v>0);
+  if(!ok.length) return "";
+  const max=Math.max(...ok);
+  let bestI=-1;
+  if(best&&ok.length>1&&max-Math.min(...ok)>1e-9){ const t=best==="max"?max:Math.min(...ok); bestI=items.findIndex(x=>x.v===t); }
+  let h=`<div class="chart"><h3>${title}</h3><p class="cap">${cap}</p>`;
+  items.forEach((x,i)=>{
+    const w=x.v>0?Math.max(1,x.v/max*100):0;
+    h+=`<div class="hb" title="${esc(x.name)}: ${x.v>0?fmtv(x.v):"–"}"><div class="hb-name">${esc(x.name)}</div><div class="hb-track one"><span style="width:${w}%"></span></div><div class="hb-val">${x.v>0?fmtv(x.v):"–"}${i===bestI?"<em>melhor</em>":""}</div></div>`;
+  });
+  return h+`</div>`;
+}
+
+function stacked(R){
+  const tots=R.map(r=>r.parts.reduce((a,b)=>a+b,0));
+  const max=Math.max(...tots);
+  if(!(max>0)) return "";
+  let h=`<div class="chart"><h3>Tempo gasto por hectare</h3><p class="cap">Segundos por hectare em cada etapa. Barra menor significa operação mais rápida.</p>`;
+  h+=`<div class="legend">${NAMES.map((n,k)=>`<span><i style="background:${COLORS[k]}"></i>${n}</span>`).join("")}</div>`;
+  R.forEach((r,i)=>{
+    const name=esc(S.sims[i].name), t=tots[i];
+    const segs=r.parts.map((p,k)=>`<span style="width:${t>0?p/max*100:0}%;background:${COLORS[k]}" title="${name}, ${NAMES[k]}: ${fmt(p,0)} s/ha"></span>`).join("");
+    h+=`<div class="hb"><div class="hb-name">${name}</div><div class="hb-track">${segs}</div><div class="hb-val">${t>0?fmt(t,0)+" s/ha":"–"}</div></div>`;
+  });
+  return h+`</div>`;
+}
+
+function renderCharts(R){
+  const it=k=>R.map((r,i)=>({name:S.sims[i].name,v:r.ok?r[k]:0}));
+  const hfmt=v=>{ const h=Math.floor(v), m=Math.floor((v-h)*60); return `${h} h ${String(m).padStart(2,"0")}`; };
+  $("simCharts").innerHTML=
+    hbars("Rendimento operacional","Hectares por hora pela fórmula de Baltin. Maior é melhor.",it("rend"),v=>fmt(v,1)+" ha/h","max")+
+    hbars("Tempo necessário","Horas de voo para aplicar a área toda.",it("horas"),hfmt,"min")+
+    hbars("Eficiência da operação","Parte do tempo total gasta aplicando no tiro.",it("efic"),v=>fmt(v,1)+" %","max")+
+    stacked(R)+
+    hbars("Valor por hectare","Valor bruto por hora de voo dividido pelo rendimento.",it("valHa"),v=>brl.format(v))+
+    hbars("Valor total","Valor bruto da área inteira.",it("valTot"),v=>brl.format(v));
+}
+
+$("simTable").addEventListener("input",e=>{
+  const t=e.target, i=+t.dataset.i, k=t.dataset.k;
+  if(isNaN(i)||!k) return;
+  const s=S.sims[i];
+  S.example=false;
+  if(k==="name"){ s.name=t.value; }
+  else{
+    const row=IN_ROWS.find(r=>r.k===k);
+    if(row&&row.mi){
+      s.v[row.mi]=t.value.trim()===""?"":num1(parse(t.value)*1000/NM);
+      const o=$("simTable").querySelector(`input[data-i="${i}"][data-k="${row.mi}"]`); if(o) o.value=s.v[row.mi];
+    } else {
+      s.v[k]=t.value;
+      const kmRow=IN_ROWS.find(r=>r.mi===k);
+      if(kmRow){ const o=$("simTable").querySelector(`input[data-i="${i}"][data-k="${kmRow.k}"]`); if(o) o.value=t.value.trim()===""?"":num1(parse(t.value)*NM/1000); }
+    }
+  }
+  updateSims();
+});
+$("simTable").addEventListener("focusin",e=>{ if(e.target.tagName==="INPUT") e.target.select(); });
+
+function setN(){
+  let n=Math.round(parse($("simN").value)); n=Math.min(8,Math.max(2,n||2));
+  while(S.sims.length<n){ const last=S.sims[S.sims.length-1]; S.sims.push({name:"Simulação "+(S.sims.length+1),v:{...last.v}}); }
+  S.sims=S.sims.slice(0,n);
+  buildTable();
+}
+$("b-simN").addEventListener("click",setN);
+$("simN").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); setN(); } });
+$("b-simCopy").addEventListener("click",()=>{
+  const v=Object.fromEntries(FIELDS.map(k=>[k,$(k).value]));
+  S.sims.forEach(s=>s.v={...v}); S.example=false; buildTable();
+});
+$("b-simEx").addEventListener("click",()=>{ S=simExample(); buildTable(); });
+
+/* ---------- Relatório PDF ---------- */
+function bestIdx(vals,best){
+  const ok=vals.filter(v=>v!=null&&v>0);
+  if(!best||ok.length<2) return -1;
+  const mx=Math.max(...ok), mn=Math.min(...ok);
+  if(mx-mn<=1e-9) return -1;
+  return vals.findIndex(v=>v===(best==="max"?mx:mn));
+}
+function buildPdf(){
+  const {jsPDF}=window.jspdf;
+  const n=S.sims.length, R=S.sims.map(s=>calc(simVals(s)));
+  const doc=new jsPDF({orientation:n>4?"landscape":"portrait",unit:"mm",format:"a4"});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), M=14;
+  const G=[47,107,58], INK=[24,35,28], MUT=[91,106,95], LINE=[207,216,204], SUNK=[227,233,225];
+  const CC=[[224,165,38],[90,164,105],[122,156,198],[196,106,74]];
+  const now=new Date();
+  const dt=now.toLocaleDateString("pt-BR")+" "+now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const names=S.sims.map((s,i)=>s.name.trim()||("Simulação "+(i+1)));
+
+  // cabeçalho
+  doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(...MUT); doc.text("Mais uma ferramenta ...",M,13);
+  doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(...G); doc.text("DRESCHER CONSULTORIA",M,19.5);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...MUT); doc.text("marcelodrescher@gmail.com",W-M,19.5,{align:"right"});
+  doc.setDrawColor(...LINE); doc.setLineWidth(.3); doc.line(M,23,W-M,23);
+  doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.setTextColor(...INK); doc.text("Relatório de simulações",M,32);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...MUT);
+  doc.text(`Rendimento operacional aeroagrícola pela fórmula de Baltin. ${n} simulações. Gerado em ${dt}.`,M,38);
+
+  const tbl={theme:"grid",margin:{left:M,right:M},styles:{font:"helvetica",fontSize:8.5,cellPadding:1.6,lineColor:LINE,lineWidth:.2,textColor:INK,halign:"right"},
+    headStyles:{fillColor:G,textColor:[255,255,255],fontStyle:"bold",halign:"center"},
+    columnStyles:(()=>{ const fw=n>4?62:58, cw=(W-2*M-fw)/n, cs={0:{halign:"left",cellWidth:fw}}; for(let c=1;c<=n;c++) cs[c]={cellWidth:cw}; return cs; })()};
+  const sec=t=>[{content:t.toUpperCase(),colSpan:n+1,styles:{fillColor:SUNK,textColor:G,fontStyle:"bold",halign:"left"}}];
+
+  const bodyIn=[];
+  for(const row of IN_ROWS){
+    if(row.sec){ bodyIn.push(sec(row.sec)); continue; }
+    bodyIn.push([`${row.l} (${row.u})`,...S.sims.map(s=>{
+      if(row.mi) return s.v[row.mi].trim()===""?"–":num1(parse(s.v[row.mi])*NM/1000);
+      return s.v[row.k].trim()===""?"–":s.v[row.k];
+    })]);
+  }
+  doc.autoTable({...tbl,startY:43,head:[["Dados de entrada",...names]],body:bodyIn});
+
+  const bodyOut=OUT_ROWS.map(row=>{
+    const b=bestIdx(R.map(r=>r.ok?r[row.k]:null),row.best);
+    return [{content:`${row.l} (${row.u})`,styles:row.key?{fontStyle:"bold"}:{}},
+      ...R.map((r,i)=>({content:row.f(r)+(i===b?" (melhor)":""),styles:i===b?{fontStyle:"bold",textColor:G}:(row.key?{fontStyle:"bold"}:{})}))];
+  });
+  doc.autoTable({...tbl,startY:doc.lastAutoTable.finalY+6,pageBreak:"avoid",head:[["Resultados",...names]],body:bodyOut});
+
+  // gráficos
+  let y=doc.lastAutoTable.finalY+10;
+  const need=h=>{ if(y+h>H-16){ doc.addPage(); y=18; } };
+  const nameW=n>4?45:38, valW=34, x0=M+nameW, bw=W-M-valW-x0, rh=6.2;
+  function head(t,cap){
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...INK); doc.text(t,M,y);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUT); doc.text(cap,M,y+4.2); y+=8;
+  }
+  function bars(t,cap,k,fv,best){
+    const vals=R.map(r=>r.ok?r[k]:0); if(!vals.some(v=>v>0)) return;
+    need(12+n*rh+4); head(t,cap);
+    const mx=Math.max(...vals), b=bestIdx(vals.map(v=>v>0?v:null),best);
+    vals.forEach((v,i)=>{
+      doc.setFont("helvetica",i===b?"bold":"normal"); doc.setFontSize(8.5); doc.setTextColor(...INK);
+      doc.text(doc.splitTextToSize(names[i],nameW-3)[0],M,y+3.6);
+      if(v>0){ doc.setFillColor(...G); doc.rect(x0,y+.6,Math.max(.6,v/mx*bw),4.2,"F"); }
+      doc.setTextColor(...(i===b?G:INK)); doc.text((v>0?fv(v):"–")+(i===b?"  melhor":""),W-M,y+3.6,{align:"right"});
+      y+=rh;
+    });
+    y+=6;
+  }
+  function stackedPdf(){
+    const tots=R.map(r=>r.parts.reduce((a,b)=>a+b,0)), mx=Math.max(...tots); if(!(mx>0)) return;
+    need(18+n*rh+4); head("Tempo gasto por hectare","Segundos por hectare em cada etapa. Barra menor significa operação mais rápida.");
+    let lx=M; doc.setFontSize(8);
+    NAMES.forEach((nm,k)=>{ doc.setFillColor(...CC[k]); doc.rect(lx,y-2.4,3,3,"F"); doc.setTextColor(...MUT); doc.text(nm,lx+4.2,y); lx+=doc.getTextWidth(nm)+11; });
+    y+=4;
+    R.forEach((r,i)=>{
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...INK);
+      doc.text(doc.splitTextToSize(names[i],nameW-3)[0],M,y+3.6);
+      let x=x0; r.parts.forEach((p,k)=>{ const w=p/mx*bw; if(w>0){ doc.setFillColor(...CC[k]); doc.rect(x,y+.6,w,4.2,"F"); x+=w; } });
+      doc.text(tots[i]>0?fmt(tots[i],0)+" s/ha":"–",W-M,y+3.6,{align:"right"});
+      y+=rh;
+    });
+    y+=6;
+  }
+  const hfmt=v=>{ const h=Math.floor(v), m=Math.floor((v-h)*60); return `${h} h ${String(m).padStart(2,"0")} min`; };
+  need(14);
+  doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(...G); doc.text("Gráficos comparativos",M,y); y+=8;
+  bars("Rendimento operacional","Hectares por hora pela fórmula de Baltin. Maior é melhor.","rend",v=>fmt(v,1)+" ha/h","max");
+  bars("Tempo necessário","Horas de voo para aplicar a área toda.","horas",hfmt,"min");
+  bars("Eficiência da operação","Parte do tempo total gasta aplicando no tiro.","efic",v=>fmt(v,1)+" %","max");
+  stackedPdf();
+  bars("Valor por hectare","Valor bruto por hora de voo dividido pelo rendimento.","valHa",v=>brl.format(v));
+  bars("Valor total","Valor bruto da área inteira.","valTot",v=>brl.format(v));
+
+  need(14);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUT);
+  doc.text(doc.splitTextToSize("Cálculo pela fórmula de Baltin: o rendimento é 3600 dividido pela soma dos tempos por hectare de carregamento, tiro, balões e translado. Velocidades em milhas terrestres por hora (1 milha = 1,609 km). Valores estimados; confira as condições reais de cada operação.",W-2*M),M,y);
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...MUT);
+    doc.text("Drescher Consultoria · marcelodrescher@gmail.com",M,H-8);
+    doc.text(`Página ${p} de ${pages}`,W-M,H-8,{align:"right"});
+  }
+  return doc;
+}
+
+function pdfMsg(t,err){ const m=$("pdfMsg"); m.hidden=!t; m.textContent=t||""; m.classList.toggle("err",!!err); }
+$("b-pdf").addEventListener("click",async()=>{
+  if(!window.jspdf||!window.jspdf.jsPDF){ pdfMsg("O gerador de PDF não carregou. Recarregue o aplicativo.",true); return; }
+  let blob;
+  try{ blob=buildPdf().output("blob"); }catch(e){ pdfMsg("Não foi possível montar o PDF. Confira os valores da tabela.",true); return; }
+  const d=new Date(), stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const name=`simulacoes-rendimento-${stamp}.pdf`;
+  const file=new File([blob],name,{type:"application/pdf"});
+  // No celular: abre o menu de compartilhar (WhatsApp, e-mail...). No computador: baixa o arquivo.
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:"Relatório de simulações",text:"Relatório de simulações – Rendimento Aeroagrícola (Drescher Consultoria)"}); pdfMsg("Relatório compartilhado."); return; }
+    catch(e){ if(e&&e.name==="AbortError"){ pdfMsg("Compartilhamento cancelado."); return; } }
+  }
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  pdfMsg("PDF salvo em Downloads. Agora é só enviar o arquivo pelo WhatsApp ou por e-mail.");
+});
+
+/* ---------- Cadastro e licença de 12 meses ---------- */
+const CFG=Object.assign({scriptUrl:"",googleClientId:"",validadeMeses:12},window.APP_CONFIG||{});
+const LICKEY="rend-aero-licenca-v1";
+const TEST=!CFG.scriptUrl;
+const dBR=iso=>new Date(iso).toLocaleDateString("pt-BR");
+function getLic(){ try{ const l=JSON.parse(localStorage.getItem(LICKEY)); return l&&l.id&&l.expira?l:null; }catch(e){ return null; } }
+function setLic(l){ try{ l?localStorage.setItem(LICKEY,JSON.stringify(l)):localStorage.removeItem(LICKEY); }catch(e){} }
+function addMonths(d,m){ const x=new Date(d); x.setMonth(x.getMonth()+m); return x; }
+function showGate(){ $("expired").hidden=true; $("gate").hidden=false; $("testMode").hidden=!TEST; document.body.style.overflow="hidden"; }
+function showExpired(l,blocked){
+  $("gate").hidden=true; $("expired").hidden=false; document.body.style.overflow="hidden";
+  $("expTitle").textContent=blocked?"Acesso suspenso":"Licença vencida";
+  $("expText").textContent=blocked
+    ? "O uso deste aplicativo foi suspenso pelo autor. Entre em contato para mais informações."
+    : `O prazo de ${CFG.validadeMeses} meses deste aplicativo terminou em ${dBR(l.expira)}. Para continuar usando, baixe novamente pelo link do autor e faça um novo cadastro.`;
+  $("expRenew").hidden=!!blocked;
+}
+function showApp(l){
+  $("gate").hidden=true; $("expired").hidden=true; document.body.style.overflow="";
+  $("licInfo").textContent=`Cadastro de ${l.nome}, feito em ${dBR(l.inicio)}. Licença válida até ${dBR(l.expira)}.${TEST?" (modo de teste)":""}`;
+}
+function gateMsg(t,ok){ const m=$("gateMsg"); m.hidden=!t; m.textContent=t||""; m.classList.toggle("ok",!!ok); }
+async function callServer(opts,ms=12000){
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),ms);
+  try{ const r=await fetch(opts.url,{method:opts.method||"GET",body:opts.body,signal:ctl.signal,redirect:"follow"}); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+async function checkLicense(){
+  const l=getLic();
+  if(!l){ const p=getPend(); if(p) showCodeStep(p); else showGate(); return; }
+  if(Date.now()>new Date(l.expira).getTime()){ showExpired(l); return; }
+  showApp(l);
+  if(TEST||!navigator.onLine) return;
+  try{
+    const r=await callServer({url:CFG.scriptUrl+"?acao=verificar&id="+encodeURIComponent(l.id)});
+    if(!r||!r.ok) return;                       // servidor indisponível: mantém a data guardada
+    if(r.encontrado===false){ setLic(null); showGate(); return; }
+    if(r.expira){ l.expira=r.expira; setLic(l); }
+    if(r.bloqueado){ showExpired(l,true); return; }
+    if(!r.valido){ showExpired(l); return; }
+    showApp(l);
+  }catch(e){ /* sem resposta: segue com a data guardada no aparelho */ }
+}
+/* cadastro pendente (aguardando o código do e-mail) fica guardado para a pessoa poder sair e voltar */
+const PENDKEY="rend-aero-pendente-v1";
+function getPend(){ try{ return JSON.parse(localStorage.getItem(PENDKEY)); }catch(e){ return null; } }
+function setPend(p){ try{ p?localStorage.setItem(PENDKEY,JSON.stringify(p)):localStorage.removeItem(PENDKEY); }catch(e){} }
+function codeMsg(t,ok){ const m=$("codeMsg"); m.hidden=!t; m.textContent=t||""; m.classList.toggle("ok",!!ok); }
+function showCodeStep(p){
+  showGate(); $("gateForm").hidden=true; $("codeForm").hidden=false;
+  $("codeEmail").textContent=p.email; $("gCode").value=""; codeMsg(p.testCode?`Código de teste: ${p.testCode}`:"",true);
+  setTimeout(()=>$("gCode").focus(),50);
+}
+function showFormStep(){ $("codeForm").hidden=true; $("gateForm").hidden=false; }
+const SERVER_ERR={
+  dados:"Confira o nome, o e-mail e o telefone.",
+  email_envio:"Não conseguimos enviar o e-mail para esse endereço. Confira se está certo.",
+  codigo:"Código incorreto. Confira e tente de novo.",
+  expirado:"Esse código venceu. Toque em Reenviar código.",
+  tentativas:"Muitas tentativas erradas. Faça o cadastro de novo.",
+  espera:"Aguarde um minuto antes de pedir outro código.",
+  limite_envios:"Limite de reenvios atingido. Faça o cadastro de novo.",
+  google:"Não foi possível confirmar a sua conta Google. Tente de novo ou use o cadastro por e-mail.",
+  nao_encontrado:"Cadastro não encontrado. Faça o cadastro de novo."
+};
+const errText=r=>SERVER_ERR[r&&r.erro]||"O servidor recusou o pedido. Tente de novo.";
+const post=body=>callServer({url:CFG.scriptUrl,method:"POST",body:JSON.stringify({...body,aparelho:navigator.userAgent.slice(0,200)})});
+function finish(lic){ setPend(null); setLic(lic); gateMsg(""); codeMsg(""); showFormStep(); showApp(lic); }
+
+/* Entrar com Google: o Google confirma o e-mail; o app recebe só nome e e-mail, nunca a senha */
+let GCRED=null;
+function decodeJwt(t){
+  const b=t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");
+  const bin=atob(b.padEnd(b.length+(4-b.length%4)%4,"="));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0))));
+}
+function onGoogle(resp){
+  try{
+    const p=decodeJwt(resp.credential);
+    GCRED=resp.credential;
+    $("gNome").value=p.name||""; $("gEmail").value=p.email||"";
+    $("gEmail").readOnly=true; $("gOk").hidden=false; $("gOr").hidden=true; $("gBtn").hidden=true;
+    $("gateBtn").textContent="Concluir cadastro";
+    gateMsg(""); setTimeout(()=>$("gTel").focus(),50);
+  }catch(e){ gateMsg(SERVER_ERR.google); }
+}
+let gTries=0;
+function initGoogle(){
+  if(!CFG.googleClientId){ $("gBox").hidden=true; return; }
+  if(!(window.google&&google.accounts&&google.accounts.id)){ if(++gTries<40) setTimeout(initGoogle,250); else $("gBox").hidden=true; return; }
+  google.accounts.id.initialize({client_id:CFG.googleClientId,callback:onGoogle,ux_mode:"popup",auto_select:false,itp_support:true});
+  google.accounts.id.renderButton($("gBtn"),{theme:"outline",size:"large",text:"continue_with",shape:"pill",locale:"pt-BR",width:Math.min(340,Math.max(220,$("gBtn").clientWidth||300))});
+}
+
+$("gateForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const nome=$("gNome").value.trim(), email=$("gEmail").value.trim(), tel=$("gTel").value.trim();
+  if(nome.length<3) return gateMsg("Digite o seu nome completo.");
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return gateMsg("Digite um e-mail válido.");
+  if(tel.replace(/\D/g,"").length<10) return gateMsg("Digite o telefone com DDD.");
+  if(!$("gAceite").checked) return gateMsg("Para usar o aplicativo, marque que está ciente do registro dos seus dados.");
+  if(!TEST&&!navigator.onLine) return gateMsg("O cadastro precisa de internet. Conecte-se e tente de novo.");
+  const btn=$("gateBtn"); btn.disabled=true; gateMsg(GCRED?"Concluindo cadastro…":"Enviando código para o seu e-mail…",true);
+  try{
+    if(GCRED){
+      if(TEST){ const now=new Date(); return finish({id:"teste-g-"+now.getTime(),inicio:now.toISOString(),expira:addMonths(now,CFG.validadeMeses).toISOString(),nome,email,tel}); }
+      const r=await post({acao:"google",credential:GCRED,tel,aceite:true});
+      if(!r||!r.ok){ gateMsg(errText(r)); return; }
+      return finish({id:r.id,inicio:r.inicio,expira:r.expira,nome:r.nome||nome,email:r.email||email,tel});
+    }
+    let p;
+    if(TEST){ p={id:"teste-"+Date.now(),email,nome,tel,testCode:String(Math.floor(100000+Math.random()*900000))}; }
+    else{
+      const r=await post({acao:"cadastrar",nome,email,tel,aceite:true});
+      if(!r||!r.ok){ gateMsg(errText(r)); return; }
+      p={id:r.id,email,nome,tel};
+    }
+    setPend(p); gateMsg(""); showCodeStep(p);
+  }catch(err){
+    gateMsg("Não foi possível falar com o servidor de cadastros. Verifique a internet e tente de novo.");
+  }finally{ btn.disabled=false; }
+});
+
+$("codeForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const p=getPend(); if(!p){ showFormStep(); return; }
+  const code=$("gCode").value.replace(/\D/g,"");
+  if(code.length!==6) return codeMsg("Digite os 6 números do código.");
+  const btn=$("codeBtn"); btn.disabled=true; codeMsg("Conferindo…",true);
+  try{
+    if(TEST){
+      if(code!==p.testCode) return codeMsg(SERVER_ERR.codigo);
+      const now=new Date(); return finish({id:p.id,inicio:now.toISOString(),expira:addMonths(now,CFG.validadeMeses).toISOString(),nome:p.nome,email:p.email,tel:p.tel});
+    }
+    const r=await post({acao:"confirmar",id:p.id,codigo:code});
+    if(!r||!r.ok){
+      codeMsg(errText(r));
+      if(r&&(r.erro==="tentativas"||r.erro==="nao_encontrado")){ setPend(null); setTimeout(showFormStep,2500); }
+      return;
+    }
+    finish({id:r.id,inicio:r.inicio,expira:r.expira,nome:p.nome,email:p.email,tel:p.tel});
+  }catch(err){ codeMsg("Não foi possível falar com o servidor. Verifique a internet e tente de novo."); }
+  finally{ btn.disabled=false; }
+});
+$("codeResend").addEventListener("click",async()=>{
+  const p=getPend(); if(!p){ showFormStep(); return; }
+  if(TEST){ p.testCode=String(Math.floor(100000+Math.random()*900000)); setPend(p); return codeMsg(`Novo código de teste: ${p.testCode}`,true); }
+  const b=$("codeResend"); b.disabled=true;
+  try{ const r=await post({acao:"reenviar",id:p.id}); codeMsg(r&&r.ok?"Enviamos um novo código. Confira o e-mail.":errText(r),!!(r&&r.ok)); }
+  catch(e){ codeMsg("Não foi possível falar com o servidor. Verifique a internet."); }
+  finally{ setTimeout(()=>b.disabled=false,60000); }
+});
+$("codeBack").addEventListener("click",()=>{ setPend(null); codeMsg(""); showFormStep(); setTimeout(()=>$("gEmail").focus(),50); });
+$("expRenew").addEventListener("click",()=>{ setLic(null); setPend(null); showFormStep(); showGate(); });
+
+/* modo instalável: guarda o app no aparelho para abrir sem internet */
+if("serviceWorker" in navigator && location.protocol!=="file:"){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+checkLicense();
+initGoogle();
+
+/* e-mail: o link abre o app de e-mail quando o aparelho permite; o botão copia o endereço */
+$("b-mail").addEventListener("click",()=>{
+  const b=$("b-mail"), addr="marcelodrescher@gmail.com";
+  const done=()=>{ b.textContent="Copiado"; setTimeout(()=>b.textContent="Copiar",1800); };
+  const fallback=()=>{ const r=document.createRange(); r.selectNodeContents($("mail")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="Selecionado"; setTimeout(()=>b.textContent="Copiar",1800); };
+  try{ navigator.clipboard.writeText(addr).then(done,fallback); }catch(e){ fallback(); }
+});
+
+/* abas */
+function showView(sim){
+  $("view-sim").hidden=!sim; $("view-calc").hidden=sim;
+  $("tab-sim").setAttribute("aria-selected",sim); $("tab-calc").setAttribute("aria-selected",!sim);
+  document.body.classList.toggle("sim",sim);
+}
+$("tab-calc").addEventListener("click",()=>{ showView(false); if(location.hash) history.replaceState(null,"",location.pathname+location.search); });
+$("tab-sim").addEventListener("click",()=>{ showView(true); location.hash="simulacoes"; });
+window.addEventListener("hashchange",()=>showView(location.hash==="#simulacoes"));
+buildTable();
+showView(location.hash==="#simulacoes");
+</script>
+
+</body>
+</html>
